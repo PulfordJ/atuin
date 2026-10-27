@@ -6,7 +6,6 @@ use atuin_common::harnesstools::{AnyHarness, Harness, mcp};
 use clap::{Parser, Subcommand};
 use eyre::{Result, bail};
 
-use super::setup::{DefaultAnswer, prompt};
 use crate::i18n::fl;
 
 #[derive(Subcommand, Debug)]
@@ -45,13 +44,7 @@ async fn install_all() -> Result<()> {
             continue;
         }
         found = true;
-        if prompt(
-            &format!("Atuin MCP for {}", harness.name()),
-            "Register atuin's MCP server for your user in every project.",
-            None,
-            DefaultAnswer::No,
-        )? && let Err(err) = install(harness).await
-        {
+        if let Err(err) = install(harness).await {
             eprintln!("Could not install for {}: {err:#}", harness.name());
             failed.push(harness.name());
         }
@@ -85,7 +78,7 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case::interactive(None)]
+    #[case::all_agents(None)]
     #[case::explicit(Some("codex"))]
     fn install_accepts_an_optional_agent(#[case] agent: Option<&str>) {
         let mut args = vec!["mcp", "install"];

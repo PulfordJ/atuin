@@ -62,7 +62,7 @@ pub async fn run(_settings: &Settings) -> Result<()> {
 #[derive(Clone, Copy, Debug)]
 pub enum DefaultAnswer {
     Yes,
-    #[cfg_attr(not(any(feature = "ai", feature = "octavo")), expect(dead_code))]
+    #[cfg_attr(not(feature = "octavo"), expect(dead_code))]
     No,
 }
 
