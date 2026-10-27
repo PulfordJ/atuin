@@ -1,3 +1,4 @@
+use std::io::{self, Write as _};
 use std::sync::Arc;
 
 use atuin_client::database::Sqlite;
@@ -29,7 +30,9 @@ impl Cmd {
         match self.action {
             None => Box::pin(atuin_ai::mcp::run(db, Arc::new(settings))).await,
             Some(Action::Install { agent: Some(agent) }) => {
-                install(AnyHarness::from_name(&agent)?).await
+                install(AnyHarness::from_name(&agent)?).await?;
+                print_capture_tip();
+                Ok(())
             }
             Some(Action::Install { agent: None }) => install_all().await,
         }
@@ -37,24 +40,35 @@ impl Cmd {
 }
 
 async fn install_all() -> Result<()> {
-    let mut found = false;
+    let found: Vec<_> =
+        AnyHarness::all().iter().copied().filter(|&harness| mcp::config_exists(harness)).collect();
+    if found.is_empty() {
+        eprintln!(
+            "No supported agent config files found. Use `atuin mcp install <agent>` to connect an \
+             agent explicitly."
+        );
+        return Ok(());
+    }
+
+    let names: Vec<_> = found.iter().map(Harness::name).collect();
+    println!("This will connect atuin's MCP server to: {}", names.join(", "));
+    println!("Tip: connect a single agent with `atuin mcp install <agent>`.");
+    print!("Continue? [Y/n] ");
+    io::stdout().flush()?;
+    let mut answer = String::new();
+    io::stdin().read_line(&mut answer)?;
+    if !matches!(answer.trim().to_lowercase().as_str(), "" | "y" | "yes") {
+        return Ok(());
+    }
+
     let mut failed = Vec::new();
-    for &harness in AnyHarness::all() {
-        if !mcp::config_exists(harness) {
-            continue;
-        }
-        found = true;
+    for harness in found {
         if let Err(err) = install(harness).await {
             eprintln!("Could not install for {}: {err:#}", harness.name());
             failed.push(harness.name());
         }
     }
-    if !found {
-        eprintln!(
-            "No supported agent config files found. Use `atuin mcp install <agent>` to connect an \
-             agent explicitly."
-        );
-    }
+    print_capture_tip();
     if !failed.is_empty() {
         bail!("MCP installation failed for: {}", failed.join(", "));
     }
@@ -64,11 +78,14 @@ async fn install_all() -> Result<()> {
 async fn install(harness: AnyHarness) -> Result<()> {
     mcp::install(harness).await?;
     eprintln!("Restart {} to load it.", harness.name());
+    Ok(())
+}
+
+fn print_capture_tip() {
     eprintln!(
-        "To let it search command output and agent threads too, run `atuin config enable \
+        "To let agents search command output and agent threads too, run `atuin config enable \
          output-capture` and `atuin config enable threads`."
     );
-    Ok(())
 }
 
 #[cfg(test)]

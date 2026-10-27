@@ -12,7 +12,7 @@ Connect all your configured agents with one command:
 atuin mcp install
 ```
 
-Atuin checks for existing user config files for Claude Code, Codex, opencode, pi and oh-my-pi (`omp`), then registers the MCP server with each one automatically. Agents without a config file are skipped. You can also target one directly with `atuin mcp install claude-code` (or `codex`, `opencode`, `pi`, `omp`), including when its config file doesn't exist yet.
+Atuin checks for existing user config files for Claude Code, Codex, opencode, pi and oh-my-pi (`omp`), lists the agents it found and asks once before registering the MCP server with all of them. Agents without a config file are skipped. You can also target one directly with `atuin mcp install claude-code` (or `codex`, `opencode`, `pi`, `omp`), including when its config file doesn't exist yet.
 
 Then restart the agents you connected. They can now search your shell history.
 
