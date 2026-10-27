@@ -56,8 +56,10 @@ async fn install_all() -> Result<()> {
     print!("Continue? [Y/n] ");
     io::stdout().flush()?;
     let mut answer = String::new();
-    io::stdin().read_line(&mut answer)?;
-    if !matches!(answer.trim().to_lowercase().as_str(), "" | "y" | "yes") {
+    // End of input declines, so Ctrl-D or a closed stdin installs nothing.
+    if io::stdin().read_line(&mut answer)? == 0
+        || !matches!(answer.trim().to_lowercase().as_str(), "" | "y" | "yes")
+    {
         return Ok(());
     }
 
